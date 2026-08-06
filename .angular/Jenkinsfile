@@ -3,14 +3,20 @@ pipeline {
 
     stages {
 
-        stage('Check Versions') {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Node Version') {
             steps {
                 bat 'node -v'
                 bat 'npm -v'
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Install Packages') {
             steps {
                 bat 'npm install'
             }
@@ -22,10 +28,5 @@ pipeline {
             }
         }
 
-        stage('Archive Build') {
-            steps {
-                archiveArtifacts artifacts: 'dist/**', fingerprint: true
-            }
-        }
     }
 }
