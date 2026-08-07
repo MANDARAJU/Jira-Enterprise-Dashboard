@@ -22,16 +22,21 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                bat 'npx ng build'
+                bat 'npm install'
+            }
+        }
+
+        stage('Check Angular CLI') {
+            steps {
+                bat 'npx ng version'
             }
         }
 
         stage('Build Angular Application') {
-    steps {
-        bat 'npx ng version'
-        bat 'npx ng build'
-    }
-}
+            steps {
+                bat 'npx ng build'
+            }
+        }
 
         stage('Archive Build') {
             steps {
@@ -39,11 +44,7 @@ pipeline {
             }
         }
     }
-stage('Check Angular CLI') {
-    steps {
-        bat 'npx ng version'
-    }
-}
+
     post {
         success {
             echo 'Build Completed Successfully'
@@ -51,6 +52,10 @@ stage('Check Angular CLI') {
 
         failure {
             echo 'Build Failed'
+        }
+
+        always {
+            cleanWs()
         }
     }
 }
