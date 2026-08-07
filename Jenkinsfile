@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        NODE_ENV = 'production'
-    }
+    NODE_ENV = 'development'
+}
 
     stages {
 
@@ -21,22 +21,29 @@ pipeline {
         }
 
         stage('Install Dependencies') {
-            steps {
-                bat 'npm install'
-            }
-        }
+    steps {
+        bat 'echo NODE_ENV=%NODE_ENV%'
+        bat 'npm config get production'
+        bat 'npm config list'
+        bat 'npm install'
+        bat 'npm list @angular/cli'
+        bat 'dir node_modules\\.bin'
+    }
+}
 
         stage('Check Angular CLI') {
-            steps {
-                bat 'npx ng version'
-            }
-        }
+    steps {
+        bat 'dir node_modules'
+        bat 'dir node_modules\\.bin'
+        bat 'npm list @angular/cli'
+    }
+}
 
         stage('Build Angular Application') {
-            steps {
-                bat 'npx ng build'
-            }
-        }
+    steps {
+        bat '.\\node_modules\\.bin\\ng.cmd build'
+    }
+}
 
         stage('Archive Build') {
             steps {
