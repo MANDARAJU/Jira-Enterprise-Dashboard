@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        NODE_ENV = 'production'
-    }
-
     stages {
 
         stage('Checkout Source') {
@@ -22,25 +18,24 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                bat 'npm install'
+                bat 'npm install --include=dev'
             }
         }
 
         stage('Check Angular CLI') {
-    steps {
-        bat 'where node'
-        bat 'where npm'
-        bat 'dir node_modules\\.bin'
-        bat 'dir node_modules\\@angular\\cli'
-        bat 'npm ls @angular/cli'
-    }
-}
+            steps {
+                bat 'dir node_modules\\.bin'
+                bat 'dir node_modules\\@angular\\cli'
+                bat 'npm ls @angular/cli'
+                bat 'npm run ng version'
+            }
+        }
 
         stage('Build Angular Application') {
-    steps {
-        bat 'npm run build'
-    }
-}
+            steps {
+                bat 'npm run build'
+            }
+        }
 
         stage('Archive Build') {
             steps {
@@ -50,8 +45,15 @@ pipeline {
 
         stage('Deploy to IIS') {
             steps {
-                bat 'if not exist "D:\\Sites\\JiraDashboard" mkdir "D:\\Sites\\JiraDashboard"'
-                bat 'robocopy "dist\\Jira-Enterprise-Dashboard\\browser" "D:\\Sites\\JiraDashboard" /E /IS /IT'
+                bat '''
+                if exist "D:\\Sites\\JiraDashboard" (
+                    rmdir /S /Q "D:\\Sites\\JiraDashboard"
+                )
+
+                mkdir "D:\\Sites\\JiraDashboard"
+
+                xcopy /E /I /Y "dist\\Jira-Enterprise-Dashboard\\browser\\*" "D:\\Sites\\JiraDashboard\\"
+                '''
             }
         }
     }
