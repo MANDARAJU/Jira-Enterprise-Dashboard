@@ -46,14 +46,8 @@ pipeline {
 
         stage('Deploy to IIS') {
             steps {
-                bat '''
-                if not exist "D:\\Sites\\JiraDashboard" mkdir "D:\\Sites\\JiraDashboard"
-
-                robocopy "dist\\Jira-Enterprise-Dashboard\\browser" "D:\\Sites\\JiraDashboard" /MIR
-
-                if %ERRORLEVEL% LEQ 7 exit /B 0
-                exit /B %ERRORLEVEL%
-                '''
+                bat 'if not exist "D:\\Sites\\JiraDashboard" mkdir "D:\\Sites\\JiraDashboard"'
+                bat 'robocopy "dist\\Jira-Enterprise-Dashboard\\browser" "D:\\Sites\\JiraDashboard" /E /IS /IT'
             }
         }
     }
@@ -65,10 +59,6 @@ pipeline {
 
         failure {
             echo 'Build or Deployment Failed'
-        }
-
-        always {
-            cleanWs()
         }
     }
 }
