@@ -51,7 +51,14 @@ pipeline {
             }
         }
     }
-
+stage('Deploy to IIS') {
+    steps {
+        bat '''
+        if not exist "D:\\Sites\\JiraDashboard" mkdir "D:\\Sites\\JiraDashboard"
+        xcopy "dist\\Jira-Enterprise-Dashboard\\browser\\*" "D:\\Sites\\JiraDashboard\\" /E /Y /I
+        '''
+    }
+}
     post {
         success {
             echo 'Build Completed Successfully'
