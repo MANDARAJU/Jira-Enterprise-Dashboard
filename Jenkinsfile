@@ -26,7 +26,7 @@ pipeline {
             }
         }
 
-        sstage('Check Angular CLI') {
+        stage('Check Angular CLI') {
     steps {
         bat 'npm run ng version'
     }
