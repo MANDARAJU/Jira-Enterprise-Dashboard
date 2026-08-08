@@ -26,17 +26,17 @@ pipeline {
             }
         }
 
-        stage('Check Angular CLI') {
-            steps {
-                bat 'npx ng version'
-            }
-        }
+        sstage('Check Angular CLI') {
+    steps {
+        bat 'npm run ng version'
+    }
+}
 
         stage('Build Angular Application') {
-            steps {
-                bat 'npx ng build'
-            }
-        }
+    steps {
+        bat 'npm run build'
+    }
+}
 
         stage('Archive Build') {
             steps {
