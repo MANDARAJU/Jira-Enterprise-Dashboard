@@ -28,7 +28,11 @@ pipeline {
 
         stage('Check Angular CLI') {
     steps {
-        bat 'npm run ng version'
+        bat 'where node'
+        bat 'where npm'
+        bat 'dir node_modules\\.bin'
+        bat 'dir node_modules\\@angular\\cli'
+        bat 'npm ls @angular/cli'
     }
 }
 
