@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-    NODE_ENV = 'development'
-}
+        NODE_ENV = 'production'
+    }
 
     stages {
 
@@ -21,51 +21,50 @@ pipeline {
         }
 
         stage('Install Dependencies') {
-    steps {
-        bat 'echo NODE_ENV=%NODE_ENV%'
-        bat 'npm config get production'
-        bat 'npm config list'
-        bat 'npm install'
-        bat 'npm list @angular/cli'
-        bat 'dir node_modules\\.bin'
-    }
-}
+            steps {
+                bat 'npm install'
+            }
+        }
 
         stage('Check Angular CLI') {
-    steps {
-        bat 'dir node_modules'
-        bat 'dir node_modules\\.bin'
-        bat 'npm list @angular/cli'
-    }
-}
+            steps {
+                bat 'npx ng version'
+            }
+        }
 
         stage('Build Angular Application') {
-    steps {
-        bat '.\\node_modules\\.bin\\ng.cmd build'
-    }
-}
+            steps {
+                bat 'npx ng build'
+            }
+        }
 
         stage('Archive Build') {
             steps {
                 archiveArtifacts artifacts: 'dist/**', fingerprint: true
             }
         }
+
+        stage('Deploy to IIS') {
+            steps {
+                bat '''
+                if not exist "D:\\Sites\\JiraDashboard" mkdir "D:\\Sites\\JiraDashboard"
+
+                robocopy "dist\\Jira-Enterprise-Dashboard\\browser" "D:\\Sites\\JiraDashboard" /MIR
+
+                if %ERRORLEVEL% LEQ 7 exit /B 0
+                exit /B %ERRORLEVEL%
+                '''
+            }
+        }
     }
-stage('Deploy to IIS') {
-    steps {
-        bat '''
-        if not exist "D:\\Sites\\JiraDashboard" mkdir "D:\\Sites\\JiraDashboard"
-        xcopy "dist\\Jira-Enterprise-Dashboard\\browser\\*" "D:\\Sites\\JiraDashboard\\" /E /Y /I
-        '''
-    }
-}
+
     post {
         success {
-            echo 'Build Completed Successfully'
+            echo 'Build and Deployment Completed Successfully'
         }
 
         failure {
-            echo 'Build Failed'
+            echo 'Build or Deployment Failed'
         }
 
         always {
