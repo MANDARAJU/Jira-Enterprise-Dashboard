@@ -1,0 +1,45 @@
+.dashboard {
+  min-height: 100vh;
+  padding: 30px;
+  background: #f4f6f8;
+  font-family: Arial, sans-serif;
+}
+
+.header {
+  background: white;
+  padding: 25px;
+  border-radius: 10px;
+  margin-bottom: 25px;
+}
+
+.header h1 {
+  margin: 0 0 8px;
+}
+
+.header p {
+  margin: 0;
+  color: #666;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.card {
+  background: white;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.card h3 {
+  margin: 0 0 15px;
+  color: #555;
+}
+
+.value {
+  font-size: 32px;
+  font-weight: bold;
+}
