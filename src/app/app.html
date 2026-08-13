@@ -1,30 +1,24 @@
-<div class="dashboard">
-  <header class="header">
-    <h1>Jira Enterprise Dashboard</h1>
-    <p>Project Management & Performance Dashboard</p>
-  </header>
+<h1>Jira Enterprise Dashboard</h1>
 
-  <section class="cards">
-    <div class="card">
-      <h3>Total Projects</h3>
-      <div class="value">0</div>
-    </div>
+<h2>Total Issues: {{ totalIssues }}</h2>
 
-    <div class="card">
-      <h3>Active Sprints</h3>
-      <div class="value">0</div>
-    </div>
+<h2>Open Issues: {{ openIssues }}</h2>
 
-    <div class="card">
-      <h3>Open Issues</h3>
-      <div class="value">0</div>
-    </div>
+<h2>In Progress: {{ inProgressIssues }}</h2>
 
-    <div class="card">
-      <h3>Completed Issues</h3>
-      <div class="value">0</div>
-    </div>
-  </section>
-</div>
+<h2>To Do: {{ todoIssues }}</h2>
 
-<router-outlet />
+<h2>Completed: {{ completedIssues }}</h2>
+
+<hr>
+
+<h2>Issues Array Length: {{ issues.length }}</h2>
+
+<hr>
+
+@for (issue of issues; track issue.id) {
+  <p>
+    {{ issue.key }} -
+    {{ issue.fields?.summary }}
+  </p>
+}
