@@ -10,6 +10,7 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
+
 const JIRA_BASE_URL = process.env.JIRA_BASE_URL;
 const JIRA_EMAIL = process.env.JIRA_EMAIL;
 const JIRA_API_TOKEN = process.env.JIRA_API_TOKEN;
@@ -23,50 +24,306 @@ const auth = Buffer.from(
   `${JIRA_EMAIL}:${JIRA_API_TOKEN}`
 ).toString('base64');
 
-app.get('/api/jira/issues', async (req, res) => {
-  try {
-    const url =
+
+/*
+|--------------------------------------------------------------------------
+| Department Projects
+|--------------------------------------------------------------------------
+*/
+
+const DEPARTMENT_PROJECTS = [
+  'DATN',
+  'EXAN2',
+  'WSB',
+  'EX15',
+  'NSISN',
+  'P15N',
+  'POR',
+  'NSUT',
+  'NBLD',
+  'NLEAD',
+  'NERP10F',
+  'INVT10N',
+  'N20',
+  'NO',
+  'INAPIS',
+  'CRM1',
+  'OQB2N',
+  'WEB2',
+  'EA'
+];
+
+
+/*
+|--------------------------------------------------------------------------
+| Project Names
+|--------------------------------------------------------------------------
+*/
+
+const PROJECT_NAMES = {
+  DATN: 'DATABASE_New',
+  EXAN2: 'Exam Analysis 2.0 (New)',
+  WSB: 'Web_Stack_Board',
+  EX15: 'Examination 1.5 (New)',
+  NSISN: 'NSIS_ADMISSIONS_1.5_New',
+  P15N: 'Payroll 1.5 (New)',
+  POR: 'MYNSPIRA 2.0',
+  NSUT: 'NSUITE (New)',
+  NBLD: 'NERP 1.0 - Building',
+  NLEAD: 'NLeader',
+  NERP10F: 'NERP_1.0_Finance(New)',
+  INVT10N: 'NERP_1.0_Inventory(New)',
+  N20: 'NAP 2.0',
+  NO: 'NSIS Ops',
+  INAPIS: 'INTEGRATIONS(APIS)',
+  CRM1: 'NAP 1.5_(NCRM_New)',
+  OQB2N: 'OQB 2.0 (New)',
+  WEB2: 'Web Applications',
+  EA: 'Engineering Academics'
+};
+
+
+/*
+|--------------------------------------------------------------------------
+| Jira API helper
+|--------------------------------------------------------------------------
+*/
+
+async function jiraRequest(url) {
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Authorization: `Basic ${auth}`,
+      Accept: 'application/json'
+    }
+  });
+
+  const text = await response.text();
+
+  if (!response.ok) {
+
+    console.error('Jira API Error');
+    console.error('HTTP Status:', response.status);
+    console.error(text);
+
+    throw new Error(
+      `Jira API failed with HTTP ${response.status}: ${text}`
+    );
+  }
+
+  return JSON.parse(text);
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Build Project JQL
+|--------------------------------------------------------------------------
+*/
+
+function buildProjectJql() {
+
+  return DEPARTMENT_PROJECTS
+    .map(key => `project = "${key}"`)
+    .join(' OR ');
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Get Jira Issues - PAGINATED
+|--------------------------------------------------------------------------
+*/
+
+async function getAllJiraIssues(jql) {
+
+  const allIssues = [];
+
+  let nextPageToken = null;
+
+  let pageNumber = 1;
+
+  while (true) {
+
+    let url =
       `${JIRA_BASE_URL}/rest/api/3/search/jql` +
-      `?jql=project%20is%20not%20EMPTY` +
-      `&maxResults=10` +
-      `&fields=summary,status,assignee,project,issuetype,priority,created,updated`;
+      `?jql=${encodeURIComponent(jql)}` +
+      `&maxResults=100` +
+      `&fields=${encodeURIComponent(
+        'summary,status,assignee,project,issuetype,priority,created,updated'
+      )}`;
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        Authorization: `Basic ${auth}`,
-        Accept: 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-
-      return res.status(response.status).json({
-        error: 'Jira API request failed',
-        details: errorText
-      });
+    if (nextPageToken) {
+      url += `&nextPageToken=${encodeURIComponent(nextPageToken)}`;
     }
 
-    const data = await response.json();
+    console.log(`Jira page ${pageNumber}`);
 
-    res.json(data);
-  } catch (error) {
-    console.error(error);
+    const data = await jiraRequest(url);
 
-    res.status(500).json({
-      error: 'Internal server error'
-    });
+    const issues = data.issues || [];
+
+    console.log(
+      `Jira page ${pageNumber} loaded: ${issues.length} issues`
+    );
+
+    allIssues.push(...issues);
+
+    if (
+      data.isLast === true ||
+      !data.nextPageToken ||
+      issues.length === 0
+    ) {
+      break;
+    }
+
+    nextPageToken = data.nextPageToken;
+
+    pageNumber++;
+
+    /*
+     * Safety limit to prevent accidental infinite loops.
+     */
+    if (pageNumber > 100) {
+      console.warn('Pagination safety limit reached.');
+      break;
+    }
   }
-});
+
+  return allIssues;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Health
+|--------------------------------------------------------------------------
+*/
 
 app.get('/api/health', (req, res) => {
+
   res.json({
     status: 'OK',
-    jiraConfigured: true
+    jiraConfigured: true,
+    departmentProjects: DEPARTMENT_PROJECTS.length
   });
+
 });
 
+
+/*
+|--------------------------------------------------------------------------
+| Department Projects
+|--------------------------------------------------------------------------
+*/
+
+app.get('/api/jira/projects', (req, res) => {
+
+  const projects = DEPARTMENT_PROJECTS.map(key => ({
+    key,
+    name: PROJECT_NAMES[key] || key
+  }));
+
+  res.json({
+    total: projects.length,
+    projects
+  });
+
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| Jira Issues
+|--------------------------------------------------------------------------
+*/
+
+app.get('/api/jira/issues', async (req, res) => {
+
+  try {
+
+    const projectJql = buildProjectJql();
+
+    /*
+     * Last 6 months.
+     */
+    const jql =
+      `(${projectJql}) ` +
+      `AND created >= -6M ` +
+      `ORDER BY created DESC`;
+
+    console.log('');
+    console.log('======================================');
+    console.log('JIRA DASHBOARD REQUEST');
+    console.log('======================================');
+    console.log('Jira JQL:', jql);
+
+    const issues = await getAllJiraIssues(jql);
+
+    console.log(
+      `TOTAL JIRA ISSUES LOADED: ${issues.length}`
+    );
+
+    res.json({
+
+      total: issues.length,
+
+      filters: {
+        period: 'Last 6 months',
+        projects: DEPARTMENT_PROJECTS
+      },
+
+      issues
+
+    });
+
+  } catch (error) {
+
+    console.error(
+      'Jira issues endpoint failed:',
+      error
+    );
+
+    res.status(500).json({
+
+      total: 0,
+
+      filters: {
+        period: 'Last 6 months',
+        projects: DEPARTMENT_PROJECTS
+      },
+
+      issues: [],
+
+      error: error.message
+
+    });
+
+  }
+
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| Start Server
+|--------------------------------------------------------------------------
+*/
+
 app.listen(PORT, () => {
-  console.log(`Jira backend running on http://localhost:${PORT}`);
+
+  console.log('');
+  console.log(
+    `Jira backend running on http://localhost:${PORT}`
+  );
+
+  console.log(
+    `Department projects configured: ${DEPARTMENT_PROJECTS.length}`
+  );
+
+  console.log(
+    `Projects: ${DEPARTMENT_PROJECTS.join(', ')}`
+  );
+
 });
