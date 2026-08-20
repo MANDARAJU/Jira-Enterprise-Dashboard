@@ -10,17 +10,9 @@ const auth = Buffer.from(`${email}:${token}`).toString('base64');
 
 async function test() {
 
-  const jql =
-  'key = "DATN-726"';
+  const url = `${baseUrl}/rest/api/3/myself`;
 
-  const url =
-    `${baseUrl}/rest/api/3/search/jql` +
-    `?jql=${encodeURIComponent(jql)}` +
-    `&maxResults=10` +
-    `&fields=summary,status,project,created`;
-
-  console.log('Testing Jira API...');
-  console.log('JQL:', jql);
+  console.log('Testing Jira authenticated user...');
   console.log('URL:', url);
 
   const response = await fetch(url, {
