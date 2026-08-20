@@ -11,7 +11,9 @@ const auth = Buffer.from(`${email}:${token}`).toString('base64');
 async function test() {
 
   const jql =
-  'key = "DATN-726"';
+  '(project = "DATN" OR project = "EXAN2" OR project = "WSB" OR project = "EX15" OR project = "NSISN" OR project = "P15N" OR project = "POR" OR project = "NSUT" OR project = "NBLD" OR project = "NLEAD" OR project = "NERP10F" OR project = "INVT10N" OR project = "N20" OR project = "NO" OR project = "INAPIS" OR project = "CRM1" OR project = "OQB2N" OR project = "WEB2" OR project = "EA") ' +
+  'AND created >= -6M ' +
+  'ORDER BY created DESC';
 
   const url =
     `${baseUrl}/rest/api/3/search/jql` +
