@@ -1,6 +1,6 @@
 const dotenv = require('dotenv');
 
-dotenv.config();
+dotenv.config({ path: '../.env' });
 
 const baseUrl = process.env.JIRA_BASE_URL;
 const email = process.env.JIRA_EMAIL;
@@ -9,7 +9,10 @@ const token = process.env.JIRA_API_TOKEN;
 const auth = Buffer.from(`${email}:${token}`).toString('base64');
 
 async function test() {
-  const jql = 'project = WSB ORDER BY created DESC';
+
+  const jql =
+    '(project = "DATN" OR project = "EXAN2" OR project = "WSB") ' +
+    'ORDER BY created DESC';
 
   const url =
     `${baseUrl}/rest/api/3/search/jql` +
@@ -19,6 +22,7 @@ async function test() {
 
   console.log('Testing Jira API...');
   console.log('JQL:', jql);
+  console.log('URL:', url);
 
   const response = await fetch(url, {
     method: 'GET',

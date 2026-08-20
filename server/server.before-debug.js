@@ -284,9 +284,9 @@ app.get('/api/jira/issues', async (req, res) => {
     const projectJql = buildProjectJql();
 
     const jql =
-  `(${projectJql}) ` +
-  `AND created >= -6M ` +
-  `ORDER BY created DESC`;
+      `(${projectJql}) ` +
+      `AND created >= -6M ` +
+      `ORDER BY created DESC`;
 
       console.log('PROJECT JQL:', projectJql);
 console.log('FINAL JQL:', jql);
