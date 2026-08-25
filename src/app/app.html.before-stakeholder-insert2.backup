@@ -1,0 +1,261 @@
+﻿```html
+<div class="dashboard">
+
+  <header class="dashboard-header">
+
+    <div>
+      <h1>Jira Enterprise Dashboard</h1>
+      <p>Department Projects â€¢ 01-Jan-2026 to Today</p>
+    </div>
+
+    <div class="header-info">
+      <span>Projects: 19</span>
+      <span>Issues: {{ totalIssues }}</span>
+    </div>
+
+  </header>
+
+
+  <section class="summary-grid">
+
+    <div class="summary-card total">
+      <div class="card-title">Total Issues</div>
+      <div class="card-value">{{ totalIssues }}</div>
+      <div class="card-subtitle">All Jira Issues</div>
+    </div>
+
+
+    <div class="summary-card open">
+      <div class="card-title">Open</div>
+      <div class="card-value">{{ openIssues }}</div>
+      <div class="card-subtitle">
+        {{ getPercentage(openIssues) }}% of total
+      </div>
+    </div>
+
+
+    <div class="summary-card progress">
+      <div class="card-title">In Progress</div>
+      <div class="card-value">{{ inProgressIssues }}</div>
+      <div class="card-subtitle">
+        {{ getPercentage(inProgressIssues) }}% of total
+      </div>
+    </div>
+
+
+    <div class="summary-card todo">
+      <div class="card-title">To Do</div>
+      <div class="card-value">{{ todoIssues }}</div>
+      <div class="card-subtitle">
+        {{ getPercentage(todoIssues) }}% of total
+      </div>
+    </div>
+
+
+    <div class="summary-card completed">
+      <div class="card-title">Completed</div>
+      <div class="card-value">{{ completedIssues }}</div>
+      <div class="card-subtitle">
+        {{ getPercentage(completedIssues) }}% of total
+      </div>
+    </div>
+
+  </section>
+
+
+  <section class="content-card">
+
+    <div class="section-header">
+
+      <div>
+        <h2>Status Overview</h2>
+        <p>Current Jira issue distribution</p>
+      </div>
+
+    </div>
+
+
+    <div class="status-bars">
+
+      <div class="status-row">
+
+        <div class="status-label">
+          <span>Completed</span>
+          <strong>{{ completedIssues }}</strong>
+        </div>
+
+        <div class="progress-track">
+
+          <div
+            class="progress-fill completed-fill"
+            [style.width.%]="getPercentage(completedIssues)">
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="status-row">
+
+        <div class="status-label">
+          <span>Open</span>
+          <strong>{{ openIssues }}</strong>
+        </div>
+
+        <div class="progress-track">
+
+          <div
+            class="progress-fill open-fill"
+            [style.width.%]="getPercentage(openIssues)">
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="status-row">
+
+        <div class="status-label">
+          <span>In Progress</span>
+          <strong>{{ inProgressIssues }}</strong>
+        </div>
+
+        <div class="progress-track">
+
+          <div
+            class="progress-fill progress-fill-blue"
+            [style.width.%]="getPercentage(inProgressIssues)">
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="status-row">
+
+        <div class="status-label">
+          <span>To Do</span>
+          <strong>{{ todoIssues }}</strong>
+        </div>
+
+        <div class="progress-track">
+
+          <div
+            class="progress-fill todo-fill"
+            [style.width.%]="getPercentage(todoIssues)">
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <section class="content-card">
+
+    <div class="section-header">
+
+      <div>
+        <h2>Jira Issues</h2>
+        <p>
+          {{ issues.length }} issues loaded from Jira
+        </p>
+      </div>
+
+      <div class="issue-count">
+        {{ issues.length }} Issues
+      </div>
+
+    </div>
+
+
+    <div class="table-container">
+
+      <table>
+
+        <thead>
+
+          <tr>
+            <th>Issue</th>
+            <th>Summary</th>
+            <th>Project</th>
+            <th>Type</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Assignee</th>
+          </tr>
+
+        </thead>
+
+
+        <tbody>
+
+          @for (issue of issues; track issue.id) {
+
+            <tr>
+
+              <td class="issue-key">
+                {{ issue.key }}
+              </td>
+
+
+              <td class="summary">
+                {{ issue.fields?.summary || 'No summary' }}
+              </td>
+
+
+              <td>
+                {{ getProjectName(issue) }}
+              </td>
+
+
+              <td>
+                {{ getIssueType(issue) }}
+              </td>
+
+
+              <td>
+                {{ getPriority(issue) }}
+              </td>
+
+
+              <td>
+
+                <span class="status-badge">
+                  {{ getStatus(issue) }}
+                </span>
+
+              </td>
+
+
+              <td>
+                {{ getAssignee(issue) }}
+              </td>
+
+            </tr>
+
+          }
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </section>
+
+
+  <footer>
+    Jira Enterprise Dashboard â€¢ 19 Department Projects â€¢
+    Data loaded from Jira API
+  </footer>
+
+</div>
+```
+

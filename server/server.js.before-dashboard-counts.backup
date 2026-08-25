@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const { Pool } = require('pg');
@@ -159,7 +159,7 @@ async function getAllJiraIssues(jql) {
       `?jql=${encodeURIComponent(jql)}` +
       `&maxResults=100` +
       `&fields=${encodeURIComponent(
-        'summary,status,assignee,project,issuetype,priority,created,updated,customfield_10163'
+        'summary,status,assignee,project,issuetype,priority,created,updated'
       )}`;
 
     if (nextPageToken) {
@@ -344,17 +344,6 @@ console.log('FINAL JQL:', jql);
       const jiraUpdated =
         fields.updated ? new Date(fields.updated) : null;
 
-      const stakeholder =
-        fields.customfield_10163?.value || null;
-
-      if (issue.key === 'POR-6365') {
-        console.log('====================================');
-        console.log('STAKEHOLDER DEBUG - POR-6365');
-        console.log('customfield_10163:', JSON.stringify(fields.customfield_10163));
-        console.log('stakeholder variable:', stakeholder);
-        console.log('====================================');
-      }
-
 
       await pool.query(
         `
@@ -370,7 +359,6 @@ console.log('FINAL JQL:', jql);
           priority,
           jira_created,
           jira_updated,
-          stakeholder,
           updated_at
         )
         VALUES
@@ -385,7 +373,6 @@ console.log('FINAL JQL:', jql);
           $8,
           $9,
           $10,
-          $11,
           CURRENT_TIMESTAMP
         )
 
@@ -402,7 +389,6 @@ console.log('FINAL JQL:', jql);
           priority = EXCLUDED.priority,
           jira_created = EXCLUDED.jira_created,
           jira_updated = EXCLUDED.jira_updated,
-          stakeholder = EXCLUDED.stakeholder,
           updated_at = CURRENT_TIMESTAMP
         `,
         [
@@ -415,8 +401,7 @@ console.log('FINAL JQL:', jql);
           issueType,
           priority,
           jiraCreated,
-          jiraUpdated,
-          stakeholder
+          jiraUpdated
         ]
       );
 
@@ -473,198 +458,7 @@ console.log('FINAL JQL:', jql);
   }
 
 });
-/*
-|--------------------------------------------------------------------------
-| Dashboard Counts API
-|--------------------------------------------------------------------------
-| Returns counts only.
-| Individual Jira issues are NOT sent to Angular.
-*/
 
-app.get('/api/jira/dashboard', async (req, res) => {
-
-  try {
-
-    const totalResult = await pool.query(`
-      SELECT COUNT(*)::int AS count
-      FROM jira_issues
-      WHERE jira_created >= DATE '2026-01-01'
-        AND jira_created < CURRENT_DATE + INTERVAL '1 day'
-    `);
-
-
-    const statusResult = await pool.query(`
-      SELECT
-        status,
-        COUNT(*)::int AS count
-      FROM jira_issues
-      WHERE jira_created >= DATE '2026-01-01'
-        AND jira_created < CURRENT_DATE + INTERVAL '1 day'
-      GROUP BY status
-      ORDER BY count DESC
-    `);
-
-
-    const projectResult = await pool.query(`
-      SELECT
-        project_key,
-        COUNT(*)::int AS count
-      FROM jira_issues
-      WHERE jira_created >= DATE '2026-01-01'
-        AND jira_created < CURRENT_DATE + INTERVAL '1 day'
-      GROUP BY project_key
-      ORDER BY count DESC
-    `);
-
-
-    const monthlyResult = await pool.query(`
-      SELECT
-        TO_CHAR(jira_created, 'YYYY-MM') AS month,
-        COUNT(*)::int AS count
-      FROM jira_issues
-      WHERE jira_created >= DATE '2026-01-01'
-        AND jira_created < CURRENT_DATE + INTERVAL '1 day'
-      GROUP BY TO_CHAR(jira_created, 'YYYY-MM')
-      ORDER BY month
-    `);
-
-
-    const stakeholderResult = await pool.query(`
-      SELECT
-        stakeholder,
-        COUNT(*)::int AS count
-      FROM jira_issues
-      WHERE jira_created >= DATE '2026-01-01'
-        AND jira_created < CURRENT_DATE + INTERVAL '1 day'
-        AND stakeholder IS NOT NULL
-        AND TRIM(stakeholder) <> ''
-      GROUP BY stakeholder
-      ORDER BY count DESC
-    `);
-
-    /*
-    |--------------------------------------------------------------------------
-    | Status grouping
-    |--------------------------------------------------------------------------
-    */
-
-    const statusCounts = {};
-
-    for (const row of statusResult.rows) {
-      statusCounts[row.status] = row.count;
-    }
-
-
-    const completed =
-      (statusCounts['Closed'] || 0) +
-      (statusCounts['Close'] || 0);
-
-
-    const inProgress =
-      (statusCounts['Dev In Progress'] || 0) +
-      (statusCounts['Code Review'] || 0) +
-      (statusCounts['Analysis'] || 0);
-
-
-    const todo =
-      (statusCounts['To Do (migrated)'] || 0) +
-      (statusCounts['ToDo'] || 0) +
-      (statusCounts['Backlog'] || 0) +
-      (statusCounts['Selected for Development'] || 0);
-
-
-    const open =
-      (statusCounts['OPEN'] || 0);
-
-
-    const onHold =
-      (statusCounts['On Hold'] || 0);
-
-
-    const readyForProd =
-      (statusCounts['Ready for PROD'] || 0);
-
-
-    const uatVerified =
-      (statusCounts['UAT VERIFIED'] || 0) +
-      (statusCounts['QAT Verified'] || 0);
-
-
-    const readyForQA =
-      (statusCounts['Ready for QA'] || 0);
-
-
-    const readyForUAT =
-      (statusCounts['Ready for UAT'] || 0);
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Ensure all 19 configured projects are returned
-    |--------------------------------------------------------------------------
-    */
-
-    const projectMap = {};
-
-    for (const project of DEPARTMENT_PROJECTS) {
-      projectMap[project] = 0;
-    }
-
-    for (const row of projectResult.rows) {
-      projectMap[row.project_key] = row.count;
-    }
-
-
-    const projects = DEPARTMENT_PROJECTS.map(project => ({
-      project,
-      count: projectMap[project] || 0
-    }));
-
-
-    res.json({
-
-      period: '01-Jan-2026 to Today',
-
-      projectCount: DEPARTMENT_PROJECTS.length,
-
-      total: totalResult.rows[0].count,
-
-      completed,
-      open,
-      inProgress,
-      todo,
-      onHold,
-      readyForProd,
-      uatVerified,
-      readyForQA,
-      readyForUAT,
-
-      projects,
-
-      monthly: monthlyResult.rows,
-
-      stakeholders: stakeholderResult.rows,
-      statusBreakdown: statusResult.rows
-
-    });
-
-
-  } catch (error) {
-
-    console.error(
-      'Dashboard counts endpoint failed:',
-      error
-    );
-
-    res.status(500).json({
-
-      error: error.message
-
-    });
-
-  }
-
-});
 
 app.listen(PORT, () => {
 
@@ -682,16 +476,3 @@ app.listen(PORT, () => {
   );
 
 });
-
-
-
-
-
-
-
-
-
-
-
-
-

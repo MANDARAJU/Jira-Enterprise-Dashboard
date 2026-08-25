@@ -1,4 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  OnInit
+} from '@angular/core';
+
 import { Jira } from './services/jira';
 
 @Component({
@@ -8,75 +13,243 @@ import { Jira } from './services/jira';
 })
 export class App implements OnInit {
 
-  activeSprints = 0;
   totalIssues = 0;
   openIssues = 0;
   inProgressIssues = 0;
   todoIssues = 0;
   completedIssues = 0;
 
+  stakeholders: any[] = [];
   issues: any[] = [];
 
-  constructor(private jira: Jira) {}
+  constructor(
+    private jira: Jira,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
+
+    console.log('APP INITIALIZED');
+
     this.loadDashboard();
+    this.loadIssues();
+
   }
+
 
   loadDashboard(): void {
-    console.log('Loading Jira issues...');
 
-    this.jira.getIssues().subscribe({
+    console.log('Loading Jira dashboard...');
+
+    this.jira.getDashboard().subscribe({
+
       next: (response: any) => {
 
-        console.log('FULL JIRA RESPONSE:', response);
+        console.log(
+          'JIRA DASHBOARD RESPONSE:',
+          response
+        );
 
-        const issues = response?.issues ?? [];
 
-        console.log('ISSUES FROM JIRA:', issues);
-        console.log('APP ISSUES LENGTH:', issues.length);
+        this.totalIssues =
+          Number(response?.total ?? 0);
 
-        this.issues = issues;
 
-        this.totalIssues = issues.length;
+        this.openIssues =
+          Number(response?.open ?? 0);
 
-        this.openIssues = issues.filter(
-          (issue: any) =>
-            issue.fields?.status?.statusCategory?.key !== 'done'
-        ).length;
 
-        this.completedIssues = issues.filter(
-          (issue: any) =>
-            issue.fields?.status?.statusCategory?.key === 'done'
-        ).length;
+        this.inProgressIssues =
+          Number(response?.inProgress ?? 0);
 
-        this.inProgressIssues = issues.filter(
-          (issue: any) =>
-            issue.fields?.status?.statusCategory?.key === 'indeterminate'
-        ).length;
 
-        this.todoIssues = issues.filter(
-          (issue: any) =>
-            issue.fields?.status?.statusCategory?.key === 'new'
-        ).length;
+        this.todoIssues =
+          Number(response?.todo ?? 0);
 
-        console.log('FINAL DASHBOARD DATA:', {
-          total: this.totalIssues,
-          open: this.openIssues,
-          inProgress: this.inProgressIssues,
-          todo: this.todoIssues,
-          completed: this.completedIssues,
-          issueArrayLength: this.issues.length
-        });
+
+        this.completedIssues =
+          Number(response?.completed ?? 0);
+
+
+        this.stakeholders =
+          Array.isArray(response?.stakeholders)
+            ? [...response.stakeholders]
+            : [];
+
+
+        console.log(
+          'DASHBOARD TOTAL:',
+          this.totalIssues
+        );
+
+
+        console.log(
+          'COMPLETED:',
+          this.completedIssues
+        );
+
+
+        console.log(
+          'OPEN:',
+          this.openIssues
+        );
+
+
+        console.log(
+          'IN PROGRESS:',
+          this.inProgressIssues
+        );
+
+
+        console.log(
+          'TO DO:',
+          this.todoIssues
+        );
+
+
+        console.log(
+          'STAKEHOLDERS:',
+          this.stakeholders.length
+        );
+
+
+        this.cdr.detectChanges();
+
       },
 
+
       error: (error: any) => {
-        console.error('Jira API Error:', error);
-        console.error('Status:', error.status);
-        console.error('URL:', error.url);
-        console.error('Message:', error.message);
-        console.error('Error body:', error.error);
+
+        console.error(
+          'Dashboard API Error:',
+          error
+        );
+
+        this.totalIssues = 0;
+        this.openIssues = 0;
+        this.inProgressIssues = 0;
+        this.todoIssues = 0;
+        this.completedIssues = 0;
+        this.stakeholders = [];
+
+        this.cdr.detectChanges();
+
       }
+
     });
+
   }
+
+
+  loadIssues(): void {
+
+    console.log(
+      'Loading Jira issues...'
+    );
+
+
+    this.jira.getIssues().subscribe({
+
+      next: (response: any) => {
+
+        console.log(
+          'JIRA ISSUES RESPONSE:',
+          response
+        );
+
+
+        const loadedIssues =
+          Array.isArray(response?.issues)
+            ? response.issues
+            : [];
+
+
+        this.issues = [
+          ...loadedIssues
+        ];
+
+
+        console.log(
+          'ISSUES LOADED:',
+          this.issues.length
+        );
+
+
+        this.cdr.detectChanges();
+
+      },
+
+
+      error: (error: any) => {
+
+        console.error(
+          'Jira Issues API Error:',
+          error
+        );
+
+        this.issues = [];
+
+        this.cdr.detectChanges();
+
+      }
+
+    });
+
+  }
+
+
+  getPercentage(value: number): number {
+
+    if (!this.totalIssues) {
+      return 0;
+    }
+
+    return Math.round(
+      (value / this.totalIssues) * 100
+    );
+
+  }
+
+
+  getProjectName(issue: any): string {
+
+    return issue?.fields?.project?.name
+      || issue?.fields?.project?.key
+      || '-';
+
+  }
+
+
+  getIssueType(issue: any): string {
+
+    return issue?.fields?.issuetype?.name
+      || '-';
+
+  }
+
+
+  getPriority(issue: any): string {
+
+    return issue?.fields?.priority?.name
+      || '-';
+
+  }
+
+
+  getStatus(issue: any): string {
+
+    return issue?.fields?.status?.name
+      || '-';
+
+  }
+
+
+  getAssignee(issue: any): string {
+
+    return issue?.fields?.assignee?.displayName
+      || issue?.fields?.assignee?.emailAddress
+      || 'Unassigned';
+
+  }
+
 }

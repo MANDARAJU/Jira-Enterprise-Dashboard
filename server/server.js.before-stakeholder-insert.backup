@@ -643,7 +643,6 @@ app.get('/api/jira/dashboard', async (req, res) => {
 
       monthly: monthlyResult.rows,
 
-      stakeholders: stakeholderResult.rows,
       statusBreakdown: statusResult.rows
 
     });

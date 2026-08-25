@@ -12,7 +12,8 @@ async function test() {
 
   const jql =
   '(project = "DATN" OR project = "EXAN2" OR project = "WSB" OR project = "EX15" OR project = "NSISN" OR project = "P15N" OR project = "POR" OR project = "NSUT" OR project = "NBLD" OR project = "NLEAD" OR project = "NERP10F" OR project = "INVT10N" OR project = "N20" OR project = "NO" OR project = "INAPIS" OR project = "CRM1" OR project = "OQB2N" OR project = "WEB2" OR project = "EA") ' +
-  'AND created >= -6M ' +
+  'AND created >= "2026-02-20" ' +
+  'AND created <= "2026-08-20" ' +
   'ORDER BY created DESC';
 
   const url =

@@ -529,19 +529,6 @@ app.get('/api/jira/dashboard', async (req, res) => {
     `);
 
 
-    const stakeholderResult = await pool.query(`
-      SELECT
-        stakeholder,
-        COUNT(*)::int AS count
-      FROM jira_issues
-      WHERE jira_created >= DATE '2026-01-01'
-        AND jira_created < CURRENT_DATE + INTERVAL '1 day'
-        AND stakeholder IS NOT NULL
-        AND TRIM(stakeholder) <> ''
-      GROUP BY stakeholder
-      ORDER BY count DESC
-    `);
-
     /*
     |--------------------------------------------------------------------------
     | Status grouping
@@ -643,7 +630,6 @@ app.get('/api/jira/dashboard', async (req, res) => {
 
       monthly: monthlyResult.rows,
 
-      stakeholders: stakeholderResult.rows,
       statusBreakdown: statusResult.rows
 
     });
@@ -682,9 +668,6 @@ app.listen(PORT, () => {
   );
 
 });
-
-
-
 
 
 

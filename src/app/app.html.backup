@@ -1,0 +1,24 @@
+<h1>Jira Enterprise Dashboard</h1>
+
+<h2>Total Issues: {{ totalIssues }}</h2>
+
+<h2>Open Issues: {{ openIssues }}</h2>
+
+<h2>In Progress: {{ inProgressIssues }}</h2>
+
+<h2>To Do: {{ todoIssues }}</h2>
+
+<h2>Completed: {{ completedIssues }}</h2>
+
+<hr>
+
+<h2>Issues Array Length: {{ issues.length }}</h2>
+
+<hr>
+
+@for (issue of issues; track issue.id) {
+  <p>
+    {{ issue.key }} -
+    {{ issue.fields?.summary }}
+  </p>
+}

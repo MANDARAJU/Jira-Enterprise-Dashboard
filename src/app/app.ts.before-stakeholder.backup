@@ -1,0 +1,128 @@
+```typescript
+import { Component, OnInit } from '@angular/core';
+import { Jira } from './services/jira';
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.html',
+  styleUrl: './app.css'
+})
+export class App implements OnInit {
+
+  totalIssues = 0;
+  openIssues = 0;
+  inProgressIssues = 0;
+  todoIssues = 0;
+  completedIssues = 0;
+
+  issues: any[] = [];
+
+  constructor(private jira: Jira) {}
+
+  ngOnInit(): void {
+    this.loadDashboard();
+  }
+
+  loadDashboard(): void {
+
+    console.log('Loading Jira issues...');
+
+    this.jira.getIssues().subscribe({
+
+      next: (response: any) => {
+
+        console.log('JIRA RESPONSE TOTAL:', response?.total);
+        console.log('JIRA RESPONSE:', response);
+
+        this.issues = response?.issues ?? [];
+
+        this.totalIssues =
+          Number(response?.total ?? this.issues.length);
+
+        this.openIssues = this.issues.filter(
+          (issue: any) =>
+            issue.fields?.status?.statusCategory?.key !== 'done'
+        ).length;
+
+        this.completedIssues = this.issues.filter(
+          (issue: any) =>
+            issue.fields?.status?.statusCategory?.key === 'done'
+        ).length;
+
+        this.inProgressIssues = this.issues.filter(
+          (issue: any) =>
+            issue.fields?.status?.statusCategory?.key === 'indeterminate'
+        ).length;
+
+        this.todoIssues = this.issues.filter(
+          (issue: any) =>
+            issue.fields?.status?.statusCategory?.key === 'new'
+        ).length;
+
+        console.log('DASHBOARD TOTAL:', this.totalIssues);
+        console.log('DASHBOARD ISSUES ARRAY:', this.issues.length);
+
+      },
+
+      error: (error: any) => {
+
+        console.error('Jira API Error:', error);
+
+        this.issues = [];
+        this.totalIssues = 0;
+        this.openIssues = 0;
+        this.inProgressIssues = 0;
+        this.todoIssues = 0;
+        this.completedIssues = 0;
+
+      }
+
+    });
+  }
+
+  getPercentage(value: number): number {
+
+    if (!this.totalIssues) {
+      return 0;
+    }
+
+    return Math.round((value / this.totalIssues) * 100);
+
+  }
+
+  getProjectName(issue: any): string {
+
+    return issue.fields?.project?.name
+      || issue.fields?.project?.key
+      || '-';
+
+  }
+
+  getIssueType(issue: any): string {
+
+    return issue.fields?.issuetype?.name || '-';
+
+  }
+
+  getPriority(issue: any): string {
+
+    return issue.fields?.priority?.name || '-';
+
+  }
+
+  getStatus(issue: any): string {
+
+    return issue.fields?.status?.name || '-';
+
+  }
+
+  getAssignee(issue: any): string {
+
+    return issue.fields?.assignee?.displayName
+      || issue.fields?.assignee?.emailAddress
+      || 'Unassigned';
+
+  }
+
+}
+```

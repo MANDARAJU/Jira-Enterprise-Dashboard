@@ -347,14 +347,6 @@ console.log('FINAL JQL:', jql);
       const stakeholder =
         fields.customfield_10163?.value || null;
 
-      if (issue.key === 'POR-6365') {
-        console.log('====================================');
-        console.log('STAKEHOLDER DEBUG - POR-6365');
-        console.log('customfield_10163:', JSON.stringify(fields.customfield_10163));
-        console.log('stakeholder variable:', stakeholder);
-        console.log('====================================');
-      }
-
 
       await pool.query(
         `
@@ -370,7 +362,6 @@ console.log('FINAL JQL:', jql);
           priority,
           jira_created,
           jira_updated,
-          stakeholder,
           updated_at
         )
         VALUES
@@ -385,7 +376,6 @@ console.log('FINAL JQL:', jql);
           $8,
           $9,
           $10,
-          $11,
           CURRENT_TIMESTAMP
         )
 
@@ -402,7 +392,6 @@ console.log('FINAL JQL:', jql);
           priority = EXCLUDED.priority,
           jira_created = EXCLUDED.jira_created,
           jira_updated = EXCLUDED.jira_updated,
-          stakeholder = EXCLUDED.stakeholder,
           updated_at = CURRENT_TIMESTAMP
         `,
         [
@@ -415,8 +404,7 @@ console.log('FINAL JQL:', jql);
           issueType,
           priority,
           jiraCreated,
-          jiraUpdated,
-          stakeholder
+          jiraUpdated
         ]
       );
 
@@ -529,19 +517,6 @@ app.get('/api/jira/dashboard', async (req, res) => {
     `);
 
 
-    const stakeholderResult = await pool.query(`
-      SELECT
-        stakeholder,
-        COUNT(*)::int AS count
-      FROM jira_issues
-      WHERE jira_created >= DATE '2026-01-01'
-        AND jira_created < CURRENT_DATE + INTERVAL '1 day'
-        AND stakeholder IS NOT NULL
-        AND TRIM(stakeholder) <> ''
-      GROUP BY stakeholder
-      ORDER BY count DESC
-    `);
-
     /*
     |--------------------------------------------------------------------------
     | Status grouping
@@ -643,7 +618,6 @@ app.get('/api/jira/dashboard', async (req, res) => {
 
       monthly: monthlyResult.rows,
 
-      stakeholders: stakeholderResult.rows,
       statusBreakdown: statusResult.rows
 
     });
@@ -682,12 +656,6 @@ app.listen(PORT, () => {
   );
 
 });
-
-
-
-
-
-
 
 
 
