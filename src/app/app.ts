@@ -1,9 +1,4 @@
-import {
-  ChangeDetectorRef,
-  Component,
-  OnInit
-} from '@angular/core';
-
+import { Component, OnInit } from '@angular/core';
 import { Jira } from './services/jira';
 
 @Component({
@@ -14,189 +9,149 @@ import { Jira } from './services/jira';
 export class App implements OnInit {
 
   totalIssues = 0;
-  openIssues = 0;
-  inProgressIssues = 0;
+  backlogIssues = 0;
   todoIssues = 0;
+  inProgressIssues = 0;
   completedIssues = 0;
 
-  stakeholders: any[] = [];
-  issues: any[] = [];
+  onHoldIssues = 0;
+  readyForProdIssues = 0;
+  uatVerifiedIssues = 0;
+  readyForQAIssues = 0;
+  readyForUATIssues = 0;
 
-  constructor(
-    private jira: Jira,
-    private cdr: ChangeDetectorRef
-  ) {}
+  stakeholders: any[] = [];
+  projects: any[] = [];
+  monthly: any[] = [];
+  statusBreakdown: any[] = [];
+
+  period = '';
+  projectCount = 0;
+  loading = false;
+  errorMessage = '';
+
+  constructor(private jira: Jira) {}
 
   ngOnInit(): void {
-
-    console.log('APP INITIALIZED');
-
     this.loadDashboard();
-    this.loadIssues();
-
   }
-
 
   loadDashboard(): void {
 
-    console.log('Loading Jira dashboard...');
+    console.log('Loading Jira Dashboard...');
+    this.loading = true;
+    this.errorMessage = '';
 
     this.jira.getDashboard().subscribe({
 
       next: (response: any) => {
 
-        console.log(
-          'JIRA DASHBOARD RESPONSE:',
-          response
-        );
+        console.log('JIRA DASHBOARD RESPONSE:', response);
 
+        this.period = response?.period ?? '';
+        this.projectCount = Number(response?.projectCount ?? 0);
 
-        this.totalIssues =
-          Number(response?.total ?? 0);
+        this.totalIssues = Number(response?.total ?? 0);
 
-
-        this.openIssues =
-          Number(response?.open ?? 0);
-
-
-        this.inProgressIssues =
-          Number(response?.inProgress ?? 0);
-
-
-        this.todoIssues =
-          Number(response?.todo ?? 0);
-
+        /*
+         * Main Dashboard Order
+         *
+         * 1. Total Issues
+         * 2. Backlog
+         * 3. To Do
+         * 4. In Progress
+         * 5. Completed
+         */
 
         this.completedIssues =
           Number(response?.completed ?? 0);
 
+        this.inProgressIssues =
+          Number(response?.inProgress ?? 0);
 
-        this.stakeholders =
-          Array.isArray(response?.stakeholders)
-            ? [...response.stakeholders]
-            : [];
+        this.todoIssues =
+          Number(response?.todo ?? 0);
 
+        this.onHoldIssues =
+          Number(response?.onHold ?? 0);
 
-        console.log(
-          'DASHBOARD TOTAL:',
-          this.totalIssues
-        );
+        this.readyForProdIssues =
+          Number(response?.readyForProd ?? 0);
 
+        this.uatVerifiedIssues =
+          Number(response?.uatVerified ?? 0);
 
-        console.log(
-          'COMPLETED:',
-          this.completedIssues
-        );
+        this.readyForQAIssues =
+          Number(response?.readyForQA ?? 0);
 
+        this.readyForUATIssues =
+          Number(response?.readyForUAT ?? 0);
 
-        console.log(
-          'OPEN:',
-          this.openIssues
-        );
+        /*
+         * Backlog
+         *
+         * Everything which is not completed,
+         * excluding the active workflow statuses
+         * already shown separately.
+         */
 
-
-        console.log(
-          'IN PROGRESS:',
+        this.backlogIssues = Math.max(
+          0,
+          this.totalIssues -
+          this.completedIssues -
+          this.todoIssues -
           this.inProgressIssues
         );
 
+        this.stakeholders =
+          response?.stakeholders ?? [];
 
-        console.log(
-          'TO DO:',
-          this.todoIssues
-        );
+        this.projects =
+          response?.projects ?? [];
 
+        this.monthly =
+          response?.monthly ?? [];
 
-        console.log(
-          'STAKEHOLDERS:',
-          this.stakeholders.length
-        );
+        this.statusBreakdown =
+          response?.statusBreakdown ?? [];
 
-
-        this.cdr.detectChanges();
+        console.log('DASHBOARD TOTAL:', this.totalIssues);
+        console.log('BACKLOG:', this.backlogIssues);
+        console.log('TODO:', this.todoIssues);
+        console.log('IN PROGRESS:', this.inProgressIssues);
+        console.log('COMPLETED:', this.completedIssues);
+        console.log('STAKEHOLDERS:', this.stakeholders.length);
+        console.log('PROJECTS:', this.projects.length);
+        console.log('STATUS BREAKDOWN:', this.statusBreakdown.length);
+        this.loading = false;
 
       },
-
 
       error: (error: any) => {
 
         console.error(
-          'Dashboard API Error:',
+          'Jira Dashboard API Error:',
           error
         );
 
         this.totalIssues = 0;
-        this.openIssues = 0;
-        this.inProgressIssues = 0;
+        this.backlogIssues = 0;
         this.todoIssues = 0;
+        this.inProgressIssues = 0;
         this.completedIssues = 0;
+
         this.stakeholders = [];
-
-        this.cdr.detectChanges();
-
+        this.projects = [];
+        this.monthly = [];
+        this.statusBreakdown = [];
+        this.errorMessage =
+          'Jira dashboard data could not be loaded. Please try again.';
+        this.loading = false;
       }
 
     });
 
   }
-
-
-  loadIssues(): void {
-
-    console.log(
-      'Loading Jira issues...'
-    );
-
-
-    this.jira.getIssues().subscribe({
-
-      next: (response: any) => {
-
-        console.log(
-          'JIRA ISSUES RESPONSE:',
-          response
-        );
-
-
-        const loadedIssues =
-          Array.isArray(response?.issues)
-            ? response.issues
-            : [];
-
-
-        this.issues = [
-          ...loadedIssues
-        ];
-
-
-        console.log(
-          'ISSUES LOADED:',
-          this.issues.length
-        );
-
-
-        this.cdr.detectChanges();
-
-      },
-
-
-      error: (error: any) => {
-
-        console.error(
-          'Jira Issues API Error:',
-          error
-        );
-
-        this.issues = [];
-
-        this.cdr.detectChanges();
-
-      }
-
-    });
-
-  }
-
 
   getPercentage(value: number): number {
 
@@ -210,46 +165,25 @@ export class App implements OnInit {
 
   }
 
-
-  getProjectName(issue: any): string {
-
-    return issue?.fields?.project?.name
-      || issue?.fields?.project?.key
-      || '-';
-
+  getStatusPercentage(value: number): number {
+    return this.getPercentage(value);
   }
 
-
-  getIssueType(issue: any): string {
-
-    return issue?.fields?.issuetype?.name
-      || '-';
-
+  getProjectPercentage(value: number): number {
+    return this.getPercentage(value);
   }
 
+  getMonthLabel(month: string): string {
+    if (!/^\d{4}-\d{2}$/.test(month)) {
+      return month;
+    }
 
-  getPriority(issue: any): string {
+    const date = new Date(`${month}-01T00:00:00`);
 
-    return issue?.fields?.priority?.name
-      || '-';
-
-  }
-
-
-  getStatus(issue: any): string {
-
-    return issue?.fields?.status?.name
-      || '-';
-
-  }
-
-
-  getAssignee(issue: any): string {
-
-    return issue?.fields?.assignee?.displayName
-      || issue?.fields?.assignee?.emailAddress
-      || 'Unassigned';
-
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      year: 'numeric'
+    }).format(date);
   }
 
 }
