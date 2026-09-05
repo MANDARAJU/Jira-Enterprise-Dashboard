@@ -6,7 +6,10 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test && npm run test:server",
+    "test:server": "node --test server/test/app.test.js server/test/config.test.js server/test/migration-foundation.test.js",
+    "start:server": "node server/server.js",
+    "db:migrate": "node server/db/migrate.js"
   },
   "private": true,
   "packageManager": "npm@11.16.0",

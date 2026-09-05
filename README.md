@@ -44,6 +44,26 @@ To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use th
 ng test
 ```
 
+## Backend configuration
+
+Copy `.env.example` to `.env` and set the Jira and PostgreSQL values for the local environment. The real `.env` file is ignored by Git and must never be committed.
+
+Start the Express API from the repository root with:
+
+```bash
+npm run start:server
+```
+
+Health checks are available at `/api/health/live` and `/api/health/ready`. Existing Jira endpoints remain available at `/api/jira/*`; versioned compatibility endpoints are also available at `/api/v1/jira/*`.
+
+## Database migrations
+
+Phase 1 database foundation migrations are versioned in `server/db/migrations`. Review them before applying them to a database, then run:
+
+```bash
+npm run db:migrate
+```
+
 ## Running end-to-end tests
 
 For end-to-end (e2e) testing, run:
